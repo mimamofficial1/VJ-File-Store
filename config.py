@@ -22,7 +22,7 @@ API_ID = int(environ.get("API_ID", "23631217"))
 API_HASH = environ.get("API_HASH", "567c6df308dc6901790309499f729d12")
 BOT_TOKEN = environ.get("BOT_TOKEN", "")
 
-PICS = (environ.get('PICS', 'https://envs.sh/AXV.jpg')).split() # Bot Start Picture
+PICS = (environ.get('PICS', 'https://graph.org/file/dca81c1a124046e92a2b6-db23f2ef7a5ffc6585.jpg')).split() # Bot Start Picture
 ADMINS = [int(admin) if id_pattern.search(admin) else admin for admin in environ.get('ADMINS', '6139759254').split()]
 BOT_USERNAME = environ.get("BOT_USERNAME", "MZStorFXrobot") # without @
 PORT = environ.get("PORT", "8080")
