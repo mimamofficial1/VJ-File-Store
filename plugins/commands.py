@@ -22,8 +22,6 @@ from urllib.parse import quote_plus
 from TechVJ.utils.file_properties import get_name, get_hash, get_media_file_size
 logger = logging.getLogger(__name__)
 
-BATCH_FILES = {}
-
 async def is_subscribed(bot, query, channel):
     btn = []
     for id in channel:
@@ -35,6 +33,8 @@ async def is_subscribed(bot, query, channel):
         except Exception as e:
             pass
     return btn
+
+BATCH_FILES = {}
 
 # Don't Remove Credit Tg - @VJ_Botz
 # Subscribe YouTube Channel For Amazing Bot https://youtube.com/@Tech_VJ
