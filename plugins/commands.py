@@ -11,10 +11,10 @@ from Script import script
 from plugins.dbusers import db
 from pyrogram import Client, filters, enums
 from plugins.users_api import get_user, update_user_info
-from pyrogram.errors import
-from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, *
+from pyrogram.errors import ChatAdminRequired, FloodWait
+from pyrogram.types import *
 from utils import verify_user, check_token, check_verification, get_token
-from config import AUTH_CHANNEL, *
+from config import *
 import re
 import json
 import base64
