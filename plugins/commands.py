@@ -174,6 +174,8 @@ async def start(client, message):
                             InlineKeyboardButton("• ᴅᴏᴡɴʟᴏᴀᴅ •", url=download),
                             InlineKeyboardButton('• ᴡᴀᴛᴄʜ •', url=stream)
                         ],[
+                            InlineKeyboardButton("• ᴡᴀᴛᴄʜ ɪɴ ᴡᴇʙ ᴀᴘᴘ •", web_app=WebAppInfo(url=stream))
+                        ],[
                             InlineKeyboardButton('ᴊᴏɪɴ ᴜᴘᴅᴀᴛᴇ ᴄʜᴀɴɴᴇʟ', url='https://t.me/Mrn_Officialx'),
                             InlineKeyboardButton('ᴍᴏᴠɪᴇs sᴇᴀʀᴄʜ ɢʀᴏᴜᴘ', url='https://t.me/MRN_Chat_Group')
                         ]]
@@ -247,6 +249,8 @@ async def start(client, message):
                     button = [[
                         InlineKeyboardButton("• ᴅᴏᴡɴʟᴏᴀᴅ •", url=download),
                         InlineKeyboardButton('• ᴡᴀᴛᴄʜ •', url=stream)
+                    ],[
+                        InlineKeyboardButton("• ᴡᴀᴛᴄʜ ɪɴ ᴡᴇʙ ᴀᴘᴘ •", web_app=WebAppInfo(url=stream))
                     ],[
                         InlineKeyboardButton('ᴊᴏɪɴ ᴜᴘᴅᴀᴛᴇ ᴄʜᴀɴɴᴇʟ', url='https://t.me/Mrn_Officialx'),
                         InlineKeyboardButton('ᴍᴏᴠɪᴇs sᴇᴀʀᴄʜ ɢʀᴏᴜᴘ', url='https://t.me/MRN_Chat_Group')
