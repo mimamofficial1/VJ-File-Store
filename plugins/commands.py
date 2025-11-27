@@ -175,8 +175,7 @@ async def start(client, message):
                             InlineKeyboardButton('• ᴡᴀᴛᴄʜ •', url=stream)
                         ],[
                             InlineKeyboardButton('🌿 𝙹𝙾𝙸𝙽 𝚄𝙿𝙳𝙰𝚃𝙴 𝙲𝙷𝙰𝙽𝙽𝙴𝙻 🌿', url='https://t.me/Mrn_Officialx'),
-                        ],[
-                            InlineKeyboardButton('💝 𝙼𝙾𝚅𝙸𝙴 𝚂𝙴𝙰𝚁𝙲𝙷 𝙶𝚁𝙾𝚄𝙿 🔍', url='https://t.me/MRN_Chat_Group'),
+                            InlineKeyboardButton('💝 𝙼𝙾𝚅𝙸𝙴 𝚂𝙴𝙰𝚁𝙲𝙷 𝙶𝚁𝙾𝚄𝙿 🔍', url='https://t.me/MRN_Chat_Group')
                         ]]
                         reply_markup=InlineKeyboardMarkup(button)
                 else:
@@ -249,7 +248,8 @@ async def start(client, message):
                         InlineKeyboardButton("• ᴅᴏᴡɴʟᴏᴀᴅ •", url=download),
                         InlineKeyboardButton('• ᴡᴀᴛᴄʜ •', url=stream)
                     ],[
-                        InlineKeyboardButton("• ᴡᴀᴛᴄʜ ɪɴ ᴡᴇʙ ᴀᴘᴘ •", web_app=WebAppInfo(url=stream))
+                        InlineKeyboardButton('🌿 𝙹𝙾𝙸𝙽 𝚄𝙿𝙳𝙰𝚃𝙴 𝙲𝙷𝙰𝙽𝙽𝙴𝙻 🌿', url='https://t.me/Mrn_Officialx'),
+                        InlineKeyboardButton('💝 𝙼𝙾𝚅𝙸𝙴 𝚂𝙴𝙰𝚁𝙲𝙷 𝙶𝚁𝙾𝚄𝙿 🔍', url='https://t.me/MRN_Chat_Group')
                     ]]
                     reply_markup=InlineKeyboardMarkup(button)
             else:
