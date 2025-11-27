@@ -49,9 +49,9 @@ If You Want To Remove Api Then Copy This And Send To Bot - `/api None`"""
 
 🇮🇳 ᴅᴇᴠᴇʟᴏᴘᴇʀ: <a href=https://t.me/mimam_officialx>꧁𓊈𒆜𝖒𝖎𝖒𝖆𝖒_𝖔𝖋𝖋𝖎𝖈𝖎𝖆𝖑𒆜𓊉꧂</a>
 
-👥 sᴜᴘᴘᴏʀᴛ ɢʀᴏᴜᴘ: <a href=https://t.me/Tv_Serial_Search_Group>𝖒𝖗𝖒 𝖘𝖚𝖕𝖕𝖔𝖗𝖙 𝖈𝖍𝖆𝖙</a>
+👥 sᴜᴘᴘᴏʀᴛ ɢʀᴏᴜᴘ: <a href=https://t.me/+LwFYMVKvg3FhODdl>𝖒𝖗𝖓 𝖙𝖛 𝖇𝖆𝖈𝖐-𝖚𝖕</a>
 
-📢 ᴜᴘᴅᴀᴛᴇ ᴄʜᴀɴɴᴇʟ: <a href=https://t.me/MRN_RIPPER>𝖒𝖗𝖓 𝖚𝖕𝖉𝖆𝖙𝖊 𝖈𝖍𝖆𝖓𝖓𝖊𝖑</a></b>
+📢 ᴜᴘᴅᴀᴛᴇ ᴄʜᴀɴɴᴇʟ: <a href=https://t.me/Mrn_Officialx>𝖒𝖗𝖓 𝖚𝖕𝖉𝖆𝖙𝖊 𝖈𝖍𝖆𝖓𝖓𝖊𝖑</a></b>
 """
 
     CABOUT_TXT = """<b>ʜɪ ɪ ᴀᴍ ᴘᴇʀᴍᴀɴᴇɴᴛ ғɪʟᴇ sᴛᴏʀᴇ ʙᴏᴛ ᴡɪᴛʜ ᴄʟᴏɴᴇ ғᴇᴀᴛᴜʀᴇ + ᴄᴜsᴛᴏᴍ ᴜʀʟ sʜᴏʀᴛɴᴇʀ ɪᴛ ᴍᴇᴀɴs ᴀɴʏ ᴜsᴇʀ ᴄᴀɴ sᴇᴛ ʜɪs ᴜʀʟ sʜᴏʀᴛɴᴇʀ ᴀɴᴅ + ᴀᴜᴛᴏ ᴅᴇʟᴇᴛᴇ.
@@ -142,5 +142,6 @@ Nᴀᴍᴇ - {}</b>
 # Don't Remove Credit Tg - @VJ_Botz
 # Subscribe YouTube Channel For Amazing Bot https://youtube.com/@Tech_VJ
 # Ask Doubt on telegram @KingVJ01
+
 
 
