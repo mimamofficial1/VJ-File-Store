@@ -11,7 +11,7 @@ class script(object):
 # Ask Doubt on telegram @KingVJ01
 
     
-    CAPTION = """<b><a href="https://t.me/Mrn_Officialx">{file_caption}</a></b>\n<b>•─────•─────────•─────•\n✯ MRN Uploaded ➥ @Mrn_Officialx\n✯ Chat Group ➥ @MRN_Chat_Group\n•─────•─────────•─────•</a></b>"""
+    CAPTION = """<b><a href="https://t.me/Mrn_Officialx">{file_caption}</a></b>"""
 
 # Don't Remove Credit Tg - @VJ_Botz
 # Subscribe YouTube Channel For Amazing Bot https://youtube.com/@Tech_VJ
@@ -142,4 +142,5 @@ Nᴀᴍᴇ - {}</b>
 # Don't Remove Credit Tg - @VJ_Botz
 # Subscribe YouTube Channel For Amazing Bot https://youtube.com/@Tech_VJ
 # Ask Doubt on telegram @KingVJ01
+
 
