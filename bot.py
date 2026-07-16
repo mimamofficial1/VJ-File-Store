@@ -27,7 +27,7 @@ logging.getLogger("pyrogram").setLevel(logging.ERROR)
 
 from pyrogram import Client, __version__
 from pyrogram.raw.all import layer
-from config import LOG_CHANNEL, ON_HEROKU, CLONE_MODE, PORT
+from config import LOG_CHANNEL, ON_HEROKU, PORT
 from typing import Union, Optional, AsyncGenerator
 from pyrogram import types
 from Script import script 
@@ -42,7 +42,6 @@ from TechVJ.server import web_server
 
 import asyncio
 from pyrogram import idle
-from plugins.clone import restart_bots
 from TechVJ.bot import StreamBot
 from TechVJ.utils.keepalive import ping_server
 from TechVJ.bot.clients import initialize_clients
@@ -91,8 +90,6 @@ async def start():
     await app.setup()
     bind_address = "0.0.0.0"
     await web.TCPSite(app, bind_address, PORT).start()
-    if CLONE_MODE == True:
-        await restart_bots()
     print("Bot Started Powered By @VJ_Botz")
     await idle()
 
