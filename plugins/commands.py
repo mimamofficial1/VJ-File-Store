@@ -14,12 +14,12 @@ from plugins.users_api import get_user, update_user_info
 from pyrogram.errors import ChatAdminRequired, FloodWait
 from pyrogram.types import *
 from utils import verify_user, check_token, check_verification, get_token
+from plugins.settings_db import get_settings
+from plugins.force_sub import not_joined_channels, force_sub_join_buttons
 from config import *
 import re
 import json
 import base64
-from urllib.parse import quote_plus
-from TechVJ.utils.file_properties import get_name, get_hash, get_media_file_size
 logger = logging.getLogger(__name__)
 
 BATCH_FILES = {}
@@ -58,6 +58,24 @@ async def start(client, message):
     if not await db.is_user_exist(message.from_user.id):
         await db.add_user(message.from_user.id, message.from_user.first_name)
         await client.send_message(LOG_CHANNEL, script.LOG_TEXT.format(message.from_user.id, message.from_user.mention))
+    if await db.is_user_banned(message.from_user.id):
+        return await message.reply_text("<b>🚫 You are banned from using this bot.</b>")
+
+    settings = await get_settings()
+    missing_channels = await not_joined_channels(client, message.from_user.id)
+    if missing_channels:
+        buttons = await force_sub_join_buttons(client, missing_channels)
+        if len(message.command) == 2:
+            retry_url = f"https://t.me/{username}?start={message.command[1]}"
+        else:
+            retry_url = f"https://t.me/{username}?start=true"
+        buttons.append([InlineKeyboardButton("🔄 Try Again", url=retry_url)])
+        return await message.reply_text(
+            settings.get("force_sub_message") or "<b>Please join our channel(s) to use this bot.</b>",
+            reply_markup=InlineKeyboardMarkup(buttons),
+            disable_web_page_preview=True
+        )
+
     if len(message.command) != 2:
         buttons = [[
             InlineKeyboardButton('⚜️ sᴜʙsᴄʀɪʙᴇ ᴍʏ ᴛᴇʟᴇɢʀᴀᴍ ᴄʜᴀɴɴᴇʟ', url='https://t.me/Mrn_Officialx')
@@ -68,13 +86,16 @@ async def start(client, message):
             InlineKeyboardButton('💁‍♀️ ʜᴇʟᴘ', callback_data='help'),
             InlineKeyboardButton('😊 ᴀʙᴏᴜᴛ', callback_data='about')
         ]]
-        if CLONE_MODE == True:
-            buttons.append([InlineKeyboardButton('🤖 ᴄʀᴇᴀᴛᴇ ʏᴏᴜʀ ᴏᴡɴ ᴄʟᴏɴᴇ ʙᴏᴛ', callback_data='clone')])
         reply_markup = InlineKeyboardMarkup(buttons)
         me = client.me
+        start_caption = settings.get("start_message") or script.START_TXT
+        try:
+            start_caption = start_caption.format(message.from_user.mention, me.mention)
+        except (IndexError, KeyError):
+            pass
         await message.reply_photo(
             photo=random.choice(PICS),
-            caption=script.START_TXT.format(message.from_user.mention, me.mention),
+            caption=start_caption,
             reply_markup=reply_markup
         )
         return
@@ -157,50 +178,52 @@ async def start(client, message):
                 old_title = getattr(file, "file_name", "")
                 title = formate_file_name(old_title)
                 size=get_size(int(file.file_size))
-                if BATCH_FILE_CAPTION:
+                batch_caption = settings.get("custom_caption") or BATCH_FILE_CAPTION
+                if batch_caption:
                     try:
-                        f_caption=BATCH_FILE_CAPTION.format(file_name= '' if title is None else title, file_size='' if size is None else size, file_caption='' if f_caption is None else f_caption)
+                        f_caption=batch_caption.format(file_name= '' if title is None else title, file_size='' if size is None else size, file_caption='' if f_caption is None else f_caption)
                     except:
                         f_caption=f_caption
                 if f_caption is None:
                     f_caption = f"{title}"
-                if STREAM_MODE == True:
-                    if info.video or info.document:
-                        log_msg = info
-                        fileName = {quote_plus(get_name(log_msg))}
-                        stream = f"{URL}watch/{str(log_msg.id)}/{quote_plus(get_name(log_msg))}?hash={get_hash(log_msg)}"
-                        download = f"{URL}{str(log_msg.id)}/{quote_plus(get_name(log_msg))}?hash={get_hash(log_msg)}"
-                        button = [[
-                            InlineKeyboardButton("• ᴅᴏᴡɴʟᴏᴀᴅ •", url=download),
-                            InlineKeyboardButton('• ᴡᴀᴛᴄʜ •', url=stream)
-                        ],[
-                            InlineKeyboardButton('ᴊᴏɪɴ ᴜᴘᴅᴀᴛᴇ ᴄʜᴀɴɴᴇʟ', url='https://t.me/Mrn_Officialx'),
-                            InlineKeyboardButton('ᴍᴏᴠɪᴇs sᴇᴀʀᴄʜ ɢʀᴏᴜᴘ', url='https://t.me/MRN_Chat_Group')
-                        ]]
-                        reply_markup=InlineKeyboardMarkup(button)
-                else:
-                    reply_markup = None
+                button = [[
+                    InlineKeyboardButton('ᴊᴏɪɴ ᴜᴘᴅᴀᴛᴇ ᴄʜᴀɴɴᴇʟ', url='https://t.me/Mrn_Officialx'),
+                    InlineKeyboardButton('ᴍᴏᴠɪᴇs sᴇᴀʀᴄʜ ɢʀᴏᴜᴘ', url='https://t.me/MRN_Chat_Group')
+                ]]
+                reply_markup = InlineKeyboardMarkup(button)
+                protect = settings.get("protect_content", False)
                 try:
-                    msg = await info.copy(chat_id=message.from_user.id, caption=f_caption, protect_content=False, reply_markup=reply_markup)
+                    msg = await info.copy(chat_id=message.from_user.id, caption=f_caption, protect_content=protect, reply_markup=reply_markup)
                 except FloodWait as e:
                     await asyncio.sleep(e.value)
-                    msg = await info.copy(chat_id=message.from_user.id, caption=f_caption, protect_content=False, reply_markup=reply_markup)
+                    msg = await info.copy(chat_id=message.from_user.id, caption=f_caption, protect_content=protect, reply_markup=reply_markup)
                 except:
                     continue
             else:
+                protect = settings.get("protect_content", False)
                 try:
-                    msg = await info.copy(chat_id=message.from_user.id, protect_content=False)
+                    msg = await info.copy(chat_id=message.from_user.id, protect_content=protect)
                 except FloodWait as e:
                     await asyncio.sleep(e.value)
-                    msg = await info.copy(chat_id=message.from_user.id, protect_content=False)
+                    msg = await info.copy(chat_id=message.from_user.id, protect_content=protect)
                 except:
                     continue
             filesarr.append(msg)
             await asyncio.sleep(1) 
+        try:
+            await client.send_message(
+                LOG_CHANNEL,
+                f"<b>📥 #FileAccess (Batch)</b>\n\n"
+                f"👤 User: {message.from_user.mention} (<code>{message.from_user.id}</code>)\n"
+                f"📦 Files Accessed: <code>{len(filesarr)}</code>"
+            )
+        except:
+            pass
         await sts.delete()
-        if AUTO_DELETE_MODE == True:
-            k = await client.send_message(chat_id = message.from_user.id, text=f"<b><u>❗️❗️❗️IMPORTANT❗️️❗️❗️</u></b>\n\nThis Movie File/Video will be deleted in <b><u>{AUTO_DELETE} minutes</u> 🫥 <i></b>(Due to Copyright Issues)</i>.\n\n<b><i>Please forward this File/Video to your Saved Messages and Start Download there</b>")
-            await asyncio.sleep(AUTO_DELETE_TIME)
+        if settings.get("auto_delete", True):
+            del_minutes = max(1, settings.get("auto_delete_time", 1800) // 60)
+            k = await client.send_message(chat_id = message.from_user.id, text=f"<b><u>❗️❗️❗️IMPORTANT❗️️❗️❗️</u></b>\n\nThis Movie File/Video will be deleted in <b><u>{del_minutes} minutes</u> 🫥 <i></b>(Due to Copyright Issues)</i>.\n\n<b><i>Please forward this File/Video to your Saved Messages and Start Download there</b>")
+            await asyncio.sleep(settings.get("auto_delete_time", 1800))
             for x in filesarr:
                 try:
                     await x.delete()
@@ -233,33 +256,34 @@ async def start(client, message):
             title = formate_file_name(media.file_name)
             size=get_size(media.file_size)
             f_caption = f"<code>{title}</code>"
-            if CUSTOM_FILE_CAPTION:
+            single_caption = settings.get("custom_caption") or CUSTOM_FILE_CAPTION
+            if single_caption:
                 try:
-                    f_caption=CUSTOM_FILE_CAPTION.format(file_name= '' if title is None else title, file_size='' if size is None else size, file_caption='')
+                    f_caption=single_caption.format(file_name= '' if title is None else title, file_size='' if size is None else size, file_caption='')
                 except:
-                    return
-            if STREAM_MODE == True:
-                if msg.video or msg.document:
-                    log_msg = msg
-                    fileName = {quote_plus(get_name(log_msg))}
-                    stream = f"{URL}watch/{str(log_msg.id)}/{quote_plus(get_name(log_msg))}?hash={get_hash(log_msg)}"
-                    download = f"{URL}{str(log_msg.id)}/{quote_plus(get_name(log_msg))}?hash={get_hash(log_msg)}"
-                    button = [[
-                        InlineKeyboardButton("• ᴅᴏᴡɴʟᴏᴀᴅ •", url=download),
-                        InlineKeyboardButton('• ᴡᴀᴛᴄʜ •', url=stream)
-                    ],[
-                        InlineKeyboardButton('ᴊᴏɪɴ ᴜᴘᴅᴀᴛᴇ ᴄʜᴀɴɴᴇʟ', url='https://t.me/Mrn_Officialx'),
-                        InlineKeyboardButton('ᴍᴏᴠɪᴇs sᴇᴀʀᴄʜ ɢʀᴏᴜᴘ', url='https://t.me/MRN_Chat_Group')
-                    ]]
-                    reply_markup=InlineKeyboardMarkup(button)
-            else:
-                reply_markup = None
-            del_msg = await msg.copy(chat_id=message.from_user.id, caption=f_caption, reply_markup=reply_markup, protect_content=False)
+                    f_caption = f"<code>{title}</code>"
+            button = [[
+                InlineKeyboardButton('ᴊᴏɪɴ ᴜᴘᴅᴀᴛᴇ ᴄʜᴀɴɴᴇʟ', url='https://t.me/Mrn_Officialx'),
+                InlineKeyboardButton('ᴍᴏᴠɪᴇs sᴇᴀʀᴄʜ ɢʀᴏᴜᴘ', url='https://t.me/MRN_Chat_Group')
+            ]]
+            reply_markup = InlineKeyboardMarkup(button)
+            del_msg = await msg.copy(chat_id=message.from_user.id, caption=f_caption, reply_markup=reply_markup, protect_content=settings.get("protect_content", False))
         else:
-            del_msg = await msg.copy(chat_id=message.from_user.id, protect_content=False)
-        if AUTO_DELETE_MODE == True:
-            k = await client.send_message(chat_id = message.from_user.id, text=f"<b><u>❗️❗️❗️IMPORTANT❗️️❗️❗️</u></b>\n\nThis Movie File/Video will be deleted in <b><u>{AUTO_DELETE} minutes</u> 🫥 <i></b>(Due to Copyright Issues)</i>.\n\n<b><i>Please forward this File/Video to your Saved Messages and Start Download there</b>")
-            await asyncio.sleep(AUTO_DELETE_TIME)
+            title = "Unknown File"
+            del_msg = await msg.copy(chat_id=message.from_user.id, protect_content=settings.get("protect_content", False))
+        try:
+            await client.send_message(
+                LOG_CHANNEL,
+                f"<b>📥 #FileAccess</b>\n\n"
+                f"👤 User: {message.from_user.mention} (<code>{message.from_user.id}</code>)\n"
+                f"🎬 File: <code>{title}</code>"
+            )
+        except:
+            pass
+        if settings.get("auto_delete", True):
+            del_minutes = max(1, settings.get("auto_delete_time", 1800) // 60)
+            k = await client.send_message(chat_id = message.from_user.id, text=f"<b><u>❗️❗️❗️IMPORTANT❗️️❗️❗️</u></b>\n\nThis Movie File/Video will be deleted in <b><u>{del_minutes} minutes</u> 🫥 <i></b>(Due to Copyright Issues)</i>.\n\n<b><i>Please forward this File/Video to your Saved Messages and Start Download there</b>")
+            await asyncio.sleep(settings.get("auto_delete_time", 1800))
             try:
                 await del_msg.delete()
             except:
@@ -351,8 +375,6 @@ async def cb_handler(client: Client, query: CallbackQuery):
             InlineKeyboardButton('💁‍♀️ ʜᴇʟᴘ', callback_data='help'),
             InlineKeyboardButton('😊 ᴀʙᴏᴜᴛ', callback_data='about')
         ]]
-        if CLONE_MODE == True:
-            buttons.append([InlineKeyboardButton('🤖 ᴄʀᴇᴀᴛᴇ ʏᴏᴜʀ ᴏᴡɴ ᴄʟᴏɴᴇ ʙᴏᴛ', callback_data='clone')])
         reply_markup = InlineKeyboardMarkup(buttons)
         await client.edit_message_media(
             query.message.chat.id, 
@@ -365,27 +387,6 @@ async def cb_handler(client: Client, query: CallbackQuery):
             reply_markup=reply_markup,
             parse_mode=enums.ParseMode.HTML
         )
-
-# Don't Remove Credit Tg - @VJ_Botz
-# Subscribe YouTube Channel For Amazing Bot https://youtube.com/@Tech_VJ
-# Ask Doubt on telegram @KingVJ01
-    
-    elif query.data == "clone":
-        buttons = [[
-            InlineKeyboardButton('Hᴏᴍᴇ', callback_data='start'),
-            InlineKeyboardButton('🔒 Cʟᴏsᴇ', callback_data='close_data')
-        ]]
-        await client.edit_message_media(
-            query.message.chat.id, 
-            query.message.id, 
-            InputMediaPhoto(random.choice(PICS))
-        )
-        reply_markup = InlineKeyboardMarkup(buttons)
-        await query.message.edit_text(
-            text=script.CLONE_TXT.format(query.from_user.mention),
-            reply_markup=reply_markup,
-            parse_mode=enums.ParseMode.HTML
-        )          
 
 # Don't Remove Credit Tg - @VJ_Botz
 # Subscribe YouTube Channel For Amazing Bot https://youtube.com/@Tech_VJ
