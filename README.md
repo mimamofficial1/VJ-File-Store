@@ -94,7 +94,7 @@ Copyright ©️ [Mrn_Officialx](https://telegram.me/Mrn_Officialx)
 </details>
 
 
-### Copyright ©️ [Tech VJ](https://telegram.me/Mrn_Officialx)
+### Copyright ©️ [Mrn_Officialx](https://telegram.me/Mrn_Officialx)
 
 <b>Selling This Repo Or Code Of This Repo For Money Is Strictly Prohibited 🚫</b>
 
