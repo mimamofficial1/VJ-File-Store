@@ -7,7 +7,8 @@ from config import ADMINS, CUSTOM_FILE_CAPTION, PUBLIC_FILE_STORE
 from Script import script
 from plugins.settings_db import (
     get_settings, update_setting, add_force_sub_channel, remove_force_sub_channel,
-    touch_last_used, readable_ago, add_custom_button, remove_custom_button, clear_custom_buttons
+    touch_last_used, readable_ago, add_custom_button, remove_custom_button, clear_custom_buttons,
+    force_sub_channel_id, force_sub_channel_mode
 )
 from plugins.admins_db import dynamic_admin_filter, is_admin, get_all_admins, add_admin, remove_admin, set_permission, PERMISSIONS
 
@@ -230,6 +231,8 @@ async def _settings_cb_inner(client: Client, query: CallbackQuery):
         ans = await client.ask(query.message.chat.id, "")
         if ans.text and ans.text.strip() == "/cancel":
             await ans.reply_text("Cancelled.")
+            settings = await get_settings()
+            await render_fsub_menu(query, settings, edit=False)
         elif ans.text:
             channel = ans.text.strip()
             try:
@@ -237,26 +240,52 @@ async def _settings_cb_inner(client: Client, query: CallbackQuery):
                 member = await client.get_chat_member(chat.id, "me")
                 if not member.privileges:
                     await ans.reply_text("<b>⚠️ I must be an admin in that channel first.</b>")
+                    settings = await get_settings()
+                    await render_fsub_menu(query, settings, edit=False)
                 else:
-                    await add_force_sub_channel(chat.id)
-                    await ans.reply_text(f"<b>✅ Added {chat.title} to Force Subscribe.</b>")
+                    await ans.reply_text(
+                        f"<i>Choose Force Sub Mode</i>",
+                        reply_markup=InlineKeyboardMarkup([
+                            [InlineKeyboardButton("Normal Mode", callback_data=f"adm_fsub_mode_normal_{chat.id}")],
+                            [InlineKeyboardButton("Join Request Mode", callback_data=f"adm_fsub_mode_request_{chat.id}")],
+                        ])
+                    )
             except Exception as e:
                 await ans.reply_text(f"<b>❌ Couldn't verify that channel.</b>\n<code>{e}</code>")
-        settings = await get_settings()
-        await render_fsub_menu(query, settings, edit=False)
+                settings = await get_settings()
+                await render_fsub_menu(query, settings, edit=False)
+
+    elif data.startswith("adm_fsub_mode_"):
+        # data format: adm_fsub_mode_<normal|request>_<chat_id>
+        parts = data.split("_")
+        mode = parts[3]
+        chat_id = int(parts[4])
+        await add_force_sub_channel(chat_id, mode)
+        try:
+            chat = await client.get_chat(chat_id)
+            title = chat.title
+        except Exception:
+            title = str(chat_id)
+        await query.message.edit_text(
+            f"✨ <i>Successfully Added {title} As Your Force Sub Channel</i>",
+            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("❮ BACK", callback_data="adm_fsub")]])
+        )
 
     elif data == "adm_fsub_remove":
         channels = settings.get("force_sub_channels") or []
         if not channels:
             return await query.answer("No channels added yet.", show_alert=True)
         buttons = []
-        for ch in channels:
+        for entry in channels:
+            ch = force_sub_channel_id(entry)
+            mode = force_sub_channel_mode(entry)
             try:
                 chat = await client.get_chat(ch)
                 label = chat.title
             except Exception:
                 label = str(ch)
-            buttons.append([InlineKeyboardButton(f"❌ {label}", callback_data=f"adm_fsub_rm_{ch}")])
+            tag = " (Request)" if mode == "request" else ""
+            buttons.append([InlineKeyboardButton(f"❌ {label}{tag}", callback_data=f"adm_fsub_rm_{ch}")])
         buttons.append([InlineKeyboardButton("« Back", callback_data="adm_fsub")])
         await query.message.edit_text("<b>Tap a channel to remove it:</b>", reply_markup=InlineKeyboardMarkup(buttons))
 

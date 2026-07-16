@@ -66,12 +66,30 @@ def readable_ago(timestamp):
     return f"{days} Days {hours} Hours"
 
 
-async def add_force_sub_channel(channel):
-    await _col.update_one({"_id": "settings"}, {"$addToSet": {"force_sub_channels": channel}}, upsert=True)
+async def add_force_sub_channel(channel, mode="normal"):
+    settings = await get_settings()
+    channels = settings.get("force_sub_channels") or []
+    # drop any existing entry for this channel (dict or legacy plain id) before re-adding
+    channels = [c for c in channels if (c.get("id") if isinstance(c, dict) else c) != channel]
+    channels.append({"id": channel, "mode": mode})
+    await update_setting("force_sub_channels", channels)
 
 
 async def remove_force_sub_channel(channel):
-    await _col.update_one({"_id": "settings"}, {"$pull": {"force_sub_channels": channel}})
+    settings = await get_settings()
+    channels = settings.get("force_sub_channels") or []
+    channels = [c for c in channels if (c.get("id") if isinstance(c, dict) else c) != channel]
+    await update_setting("force_sub_channels", channels)
+
+
+def force_sub_channel_id(entry):
+    """Works whether the stored entry is the new {'id':.., 'mode':..} dict
+    or an older plain channel id (kept for backwards compatibility)."""
+    return entry.get("id") if isinstance(entry, dict) else entry
+
+
+def force_sub_channel_mode(entry):
+    return entry.get("mode", "normal") if isinstance(entry, dict) else "normal"
 
 
 async def add_custom_button(text, url):

@@ -165,6 +165,7 @@ async def start(client, message):
             BATCH_FILES[file_id] = msgs
             
         filesarr = []
+        titles = []
         for msg in msgs:
             channel_id = int(msg.get("channel_id"))
             msgid = msg.get("msg_id")
@@ -202,6 +203,7 @@ async def start(client, message):
                 except:
                     continue
             else:
+                title = "Unknown File"
                 protect = settings.get("protect_content", False)
                 try:
                     msg = await info.copy(chat_id=message.from_user.id, protect_content=protect)
@@ -211,13 +213,22 @@ async def start(client, message):
                 except:
                     continue
             filesarr.append(msg)
+            titles.append(title)
             await asyncio.sleep(1) 
         try:
+            if titles:
+                shown = titles[:30]
+                files_list = "\n".join(f"{i+1}. <code>{t}</code>" for i, t in enumerate(shown))
+                if len(titles) > 30:
+                    files_list += f"\n... and {len(titles) - 30} more"
+            else:
+                files_list = "N/A"
             await client.send_message(
                 LOG_CHANNEL,
                 f"<b>📥 #FileAccess (Batch)</b>\n\n"
                 f"👤 User: {message.from_user.mention} (<code>{message.from_user.id}</code>)\n"
-                f"📦 Files Accessed: <code>{len(filesarr)}</code>"
+                f"📦 Files Accessed: <code>{len(filesarr)}</code>\n\n"
+                f"{files_list}"
             )
         except:
             pass
