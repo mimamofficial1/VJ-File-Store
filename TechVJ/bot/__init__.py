@@ -1,7 +1,6 @@
 from pyrogram import Client, types
 from config import *
 from typing import Union, Optional, AsyncGenerator
-from aiohttp import web
 
 class StreamXBot(Client):
 
@@ -55,6 +54,3 @@ class StreamXBot(Client):
                 current += 1
       
 StreamBot = StreamXBot()
-
-multi_clients = {}
-work_loads = {}
