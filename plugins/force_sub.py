@@ -69,9 +69,15 @@ async def handle_member_left(client: Client, update):
         f"[FSUB] member_updated event: chat={update.chat.id} "
         f"old_status={old.status if old else None} new_status={new.status if new else None}"
     )
-    if not new or new.status not in (enums.ChatMemberStatus.LEFT, enums.ChatMemberStatus.BANNED):
+    # In this pyrofork build, a leave/removal shows up as new_chat_member
+    # being None entirely (not a ChatMember object with status=LEFT) - so
+    # "new is None" itself has to count as a leave, on top of the normal
+    # LEFT/BANNED status check.
+    left_or_banned = new is None or new.status in (enums.ChatMemberStatus.LEFT, enums.ChatMemberStatus.BANNED)
+    if not left_or_banned:
         return
-    user = new.user or (update.old_chat_member.user if update.old_chat_member else None)
+
+    user = (new.user if new else None) or (old.user if old else None)
     if not user:
         logger.info(f"[FSUB] member_updated for chat={update.chat.id} has no user info, skipping")
         return
@@ -92,25 +98,6 @@ async def handle_member_left(client: Client, update):
         logger.info(f"[FSUB] chat={update.chat.id} is not a registered 'request' mode force-sub channel - ignoring leave")
 
 
-async def _live_pending_check(client: Client, chat_id, user_id) -> bool:
-    """Secondary check only - ask Telegram directly whether this user still
-    has an actively pending join request right now. Used to catch someone
-    who left/cancelled after we'd already marked them satisfied, in case
-    the leave-event (handle_member_left below) was missed."""
-    try:
-        found = False
-        async for _ in client.get_chat_join_requests(chat_id, user_id=user_id, limit=1):
-            found = True
-            break
-        logger.info(f"[FSUB] live_pending_check user={user_id} chat={chat_id} -> found_pending={found}")
-        return found
-    except Exception as e:
-        # Can't verify -> don't punish the user for a transient API hiccup,
-        # keep trusting the DB record.
-        logger.warning(f"[FSUB] live_pending_check user={user_id} chat={chat_id} EXCEPTION (defaulting to True): {type(e).__name__}: {e}")
-        return True
-
-
 async def _channel_status(client: Client, entry, user_id: int):
     """Check a single force-sub channel for this user.
     Returns (missing_entry_or_None, button_row_or_None)."""
@@ -118,18 +105,9 @@ async def _channel_status(client: Client, entry, user_id: int):
     mode = force_sub_channel_mode(entry)
 
     if mode == "request" and await has_join_request(user_id, ch):
-        # We think they're satisfied, but double check they haven't left or
-        # cancelled since (in case the leave-event was missed) before
-        # trusting it blindly.
-        still_pending = await _live_pending_check(client, ch, user_id)
-        if still_pending:
-            return None, None
-        try:
-            await clear_join_request(user_id, ch)
-            logger.info(f"[FSUB] user={user_id} chat={ch} DB record was stale - cleared")
-        except Exception:
-            pass
-        # fall through to the normal membership check below
+        # Trusted: set the instant Telegram fires the join-request event,
+        # and cleared the instant handle_member_left detects they left.
+        return None, None
 
     try:
         member = await client.get_chat_member(ch, user_id)
