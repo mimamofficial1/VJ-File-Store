@@ -1,6 +1,7 @@
 # Dynamic bot settings stored in MongoDB so admins can change them
 # from chat (via /settings) without redeploying the bot.
 
+import datetime
 import motor.motor_asyncio
 from config import DB_URI, DB_NAME
 
@@ -147,9 +148,14 @@ async def clear_custom_buttons():
 async def record_join_request(user_id, channel_id):
     await _join_requests_col.update_one(
         {"user_id": int(user_id), "channel_id": int(channel_id)},
-        {"$set": {"user_id": int(user_id), "channel_id": int(channel_id)}},
+        {"$set": {"user_id": int(user_id), "channel_id": int(channel_id), "requested_at": datetime.datetime.utcnow()}},
         upsert=True,
     )
+
+
+async def get_join_request(user_id, channel_id):
+    """Returns the full record (with its timestamp) or None."""
+    return await _join_requests_col.find_one({"user_id": int(user_id), "channel_id": int(channel_id)})
 
 
 async def has_join_request(user_id, channel_id):

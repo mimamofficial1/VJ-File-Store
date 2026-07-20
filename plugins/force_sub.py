@@ -13,16 +13,23 @@
 
 import asyncio
 import logging
+import datetime
 from pyrogram import Client, filters, enums
 from pyrogram.errors import UserNotParticipant
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from plugins.settings_db import (
     get_settings, force_sub_channel_id, force_sub_channel_mode,
     force_sub_channel_link, set_force_sub_link,
-    record_join_request, has_join_request, clear_join_request,
+    record_join_request, clear_join_request, get_join_request,
 )
 
 logger = logging.getLogger(__name__)
+
+# If a request has sat unapproved for this long, we stop trusting it blindly
+# and re-verify against Telegram - this is what catches requests the admin
+# quietly *declined* (Telegram sends no event at all for a plain decline,
+# unlike ban/kick which we already detect via handle_member_left below).
+JOIN_REQUEST_TTL_DAYS = 3
 
 
 @Client.on_chat_join_request()
@@ -104,10 +111,32 @@ async def _channel_status(client: Client, entry, user_id: int):
     ch = force_sub_channel_id(entry)
     mode = force_sub_channel_mode(entry)
 
-    if mode == "request" and await has_join_request(user_id, ch):
-        # Trusted: set the instant Telegram fires the join-request event,
-        # and cleared the instant handle_member_left detects they left.
-        return None, None
+    if mode == "request":
+        doc = await get_join_request(user_id, ch)
+        if doc:
+            requested_at = doc.get("requested_at")
+            age_days = (datetime.datetime.utcnow() - requested_at).days if requested_at else 0
+            if age_days < JOIN_REQUEST_TTL_DAYS:
+                return None, None  # still fresh, trust it - no extra API call needed
+
+            # Older than the grace period - a plain "Decline" from the admin
+            # sends no event to the bot at all, so this is our only chance
+            # to catch it. Re-verify against Telegram before trusting further.
+            logger.info(f"[FSUB] user={user_id} chat={ch} DB record is {age_days}d old - re-verifying")
+            try:
+                member = await client.get_chat_member(ch, user_id)
+                if member.status not in ("kicked", "banned", "left"):
+                    await record_join_request(user_id, ch)  # confirmed real member - refresh timestamp
+                    return None, None
+                await clear_join_request(user_id, ch)
+                logger.info(f"[FSUB] user={user_id} chat={ch} stale record expired ({member.status}) - needs fresh request")
+            except UserNotParticipant:
+                await clear_join_request(user_id, ch)
+                logger.info(f"[FSUB] user={user_id} chat={ch} stale record expired (not a member/no pending request) - needs fresh request")
+            except Exception as e:
+                logger.warning(f"[FSUB] user={user_id} chat={ch} couldn't re-verify stale record (keeping it): {e}")
+                return None, None
+            # falls through to the normal membership check / button below
 
     try:
         member = await client.get_chat_member(ch, user_id)
